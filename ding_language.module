@@ -1,0 +1,84 @@
+<?php
+
+/**
+ * @file
+ * Multilanguage functionality for easySuite.
+ */
+
+include_once 'ding_language.features.inc';
+
+/**
+ * Implements hook_views_query_alter().
+ */
+function ding_language_views_query_alter(&$view, &$query) {
+  switch ($view->name) {
+    case 'ding_library':
+    case 'ding_news':
+    case 'ding_event':
+    case 'ding_groups':
+    case 'ding_news_library_list':
+    case 'ding_event_library_list':
+      $query->where[1]['conditions'][] = array(
+        'field' => 'node.language',
+        'operator' => '=',
+        'value' => array(
+          '***CURRENT_LANGUAGE***' => '***CURRENT_LANGUAGE***',
+        ),
+      );
+      break;
+  }
+}
+
+/**
+ * Implements hook_query_TAG_alter().
+ */
+function ding_language_query_library_list_alter(QueryAlterableInterface $query) {
+  global $language;
+  $query->condition('language', $language->language);
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function ding_language_form_alter(&$form, &$form_state, $form_id) {
+  // Filtering "Library" field of ding_event and ding_news node form.
+  if ($form_id == 'ding_event_node_form' || $form_id == 'ding_news_node_form') {
+    global $language;
+
+    $rels = $form['og_group_ref'][LANGUAGE_NONE]['#options'];
+    if (isset($rels['_none'])) {
+      unset($rels['_none']);
+    }
+
+    $nids = array();
+    foreach ($rels as $key => $rel) {
+      $nids[] = $key;
+    }
+
+    $nodes = node_load_multiple($nids);
+
+    $current_lang_rels = array();
+    foreach ($nodes as $node) {
+      if ($node->language == $language->language) {
+        $current_lang_rels[$node->nid] = $node->title;
+      }
+    }
+
+    $current_lang_rels = array('_none' => t('- None -')) + $current_lang_rels;
+
+    $form['og_group_ref'][LANGUAGE_NONE]['#options'] = $current_lang_rels;
+  }
+}
+
+/**
+ * Implements hook_post_features_revert().
+ */
+function ding_language_post_features_revert($component) {
+  // Enable multilanguage support for content types.
+  $content_types = node_type_get_types();
+  foreach ($content_types as $content_type) {
+    variable_set('language_content_type_' . $content_type->type, 2);
+  }
+
+  variable_set('ding_language_random', rand());
+}

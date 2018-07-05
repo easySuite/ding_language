@@ -1,0 +1,10 @@
+name = Ding Language
+description = Enables multilanguage support for Ding2
+core = 7.x
+package = easyOPAC
+dependencies[] = ctools
+dependencies[] = strongarm
+features[ctools][] = strongarm:strongarm:1
+features[features_api][] = api:2
+features[variable][] = ding_language_random
+features[variable][] = i18n_hide_translation_links
