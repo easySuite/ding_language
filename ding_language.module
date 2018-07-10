@@ -86,7 +86,7 @@ function ding_language_search_api_views_query_alter(view &$view, SearchApiViewsQ
  */
 function ding_language_query_language_alter(QueryAlterableInterface $query) {
   global $language;
-  $query->condition('node.language', $language->language);
+  $query->condition('language', $language->language, '=');
 }
 
 /**
