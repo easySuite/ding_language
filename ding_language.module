@@ -11,30 +11,82 @@ include_once 'ding_language.features.inc';
  * Implements hook_views_query_alter().
  */
 function ding_language_views_query_alter(&$view, &$query) {
-  switch ($view->name) {
-    case 'ding_library':
-    case 'ding_news':
-    case 'ding_event':
-    case 'ding_groups':
-    case 'ding_news_library_list':
-    case 'ding_event_library_list':
-      $query->where[1]['conditions'][] = array(
+  $enabled_views = views_get_enabled_views();
+
+  $content_modules = [
+    'ding_eresource',
+    'ding_event',
+    'ding_news',
+    'ding_library',
+    'ding_groups',
+  ];
+
+  $processed_views = [];
+  foreach ($enabled_views as $module) {
+    if (in_array($module->name, $content_modules)) {
+      $display_names = array_keys($module->display);
+      $processed_views[] = $display_names;
+    }
+  }
+
+  $inlined = call_user_func_array('array_merge', $processed_views);
+
+  foreach ($inlined as $item) {
+    if ($view->current_display == $item) {
+      $query->where[1]['conditions'][] = [
         'field' => 'node.language',
         'operator' => '=',
-        'value' => array(
+        'value' => [
           '***CURRENT_LANGUAGE***' => '***CURRENT_LANGUAGE***',
-        ),
-      );
-      break;
+        ],
+      ];
+    }
   }
+}
+
+/**
+ * Implements hook_search_api_views_query_alter().
+ */
+function ding_language_search_api_views_query_alter(view &$view, SearchApiViewsQuery &$query) {
+  global $language;
+
+  $idx_id = db_select('search_api_index', 'sai')
+    ->fields('sai', ['id'])
+    ->condition('machine_name', 'default_multiple_index', '=')
+    ->execute()
+    ->fetchField();
+
+  $index = search_api_index_load($idx_id);
+  $fields = array(
+    'options' => $index->options,
+  );
+  if (empty($fields['options']['fields']['node:language'])) {
+    $fields['options']['fields']['node:language'] = [
+      'type' => 'string',
+    ];
+
+    search_api_index_edit($index->id, $fields);
+    try {
+      search_api_index_items($index);
+    }
+    catch (Exception $e) {
+      watchdog('error', $e->getMessage());
+    }
+  }
+
+  $query->where[1]['conditions'][0] = [
+    '0' => 'node:language',
+    '1' => $language->language,
+    '2' => '=',
+  ];
 }
 
 /**
  * Implements hook_query_TAG_alter().
  */
-function ding_language_query_library_list_alter(QueryAlterableInterface $query) {
+function ding_language_query_language_alter(QueryAlterableInterface $query) {
   global $language;
-  $query->condition('language', $language->language);
+  $query->condition('language', $language->language, '=');
 }
 
 /**
@@ -50,21 +102,21 @@ function ding_language_form_alter(&$form, &$form_state, $form_id) {
       unset($rels['_none']);
     }
 
-    $nids = array();
+    $nids = [];
     foreach ($rels as $key => $rel) {
       $nids[] = $key;
     }
 
     $nodes = node_load_multiple($nids);
 
-    $current_lang_rels = array();
+    $current_lang_rels = [];
     foreach ($nodes as $node) {
       if ($node->language == $language->language) {
         $current_lang_rels[$node->nid] = $node->title;
       }
     }
 
-    $current_lang_rels = array('_none' => t('- None -')) + $current_lang_rels;
+    $current_lang_rels = ['_none' => t('- None -')] + $current_lang_rels;
 
     $form['og_group_ref'][LANGUAGE_NONE]['#options'] = $current_lang_rels;
   }
@@ -74,6 +126,29 @@ function ding_language_form_alter(&$form, &$form_state, $form_id) {
  * Implements hook_post_features_revert().
  */
 function ding_language_post_features_revert($component) {
+  // Enable detection of language from URL.
+  $negotiation = array(
+    'locale-url' => array(
+      'callbacks' => array(
+        'language' => 'locale_language_from_url',
+        'switcher' => 'locale_language_switcher_url',
+        'url_rewrite' => 'locale_language_url_rewrite_url',
+      ),
+      'file' => 'includes/locale.inc',
+    ),
+    'language-default' => array(
+      'callbacks' => array(
+        'language' => 'language_from_default',
+      ),
+    ),
+  );
+
+  variable_del('language_negotiation_language');
+  variable_set('language_negotiation_language', $negotiation);
+
+  // Set custom path to language icons.
+  variable_set('languageicons_path', 'https://storage.easyting.dk/icons/*.png');
+
   // Enable multilanguage support for content types.
   $content_types = node_type_get_types();
   foreach ($content_types as $content_type) {
@@ -81,4 +156,44 @@ function ding_language_post_features_revert($component) {
   }
 
   variable_set('ding_language_random', rand());
+}
+
+/**
+ * Implements hook_preprocess_HOOK().
+ */
+function ding_language_preprocess_menu_block_wrapper(&$variables) {
+  if ($variables['config']['menu_name'] == 'menu-secondary-menu') {
+    if ($variables['config']['disabled'] == FALSE) {
+      // Fetching "Secondary menu" pane metadata.
+      $query = db_select('panels_pane', 'pp')
+        ->fields('pp', ['pid', 'did'])
+        ->condition('panel', 'navigation', '=')
+        ->condition('subtype', 'menu_block-2', '=')
+        ->execute()
+        ->fetchAll();
+
+      $pane_metadata = reset($query);
+
+      // Loading "Navigation" display.
+      $display = panels_load_display($pane_metadata->did);
+
+      if (!empty($display)) {
+        $pane = $display->content[$pane_metadata->pid];
+        // Disabling "Secondary menu" block.
+        $pane->shown = 0;
+
+        // Load "Language switcher" pane.
+        $new_pane = panels_new_pane('block', 'locale-language', TRUE);
+        $new_pane->configuration = [
+          'override_title' => 1,
+          'override_title_text' => '',
+          'override_title_heading' => 'h2',
+        ];
+        $display->add_pane($new_pane, 'navigation');
+
+        // Save whole display.
+        panels_save_display($display);
+      }
+    }
+  }
 }

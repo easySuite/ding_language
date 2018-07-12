@@ -1,6 +1,36 @@
 <?php
 
+/**
+ * @file
+ * Install functionality.
+ */
+
+/**
+ * Implements hook_install().
+ */
 function ding_language_install() {
+  // Enable detection of language from URL.
+  $negotiation = [
+    'locale-url' => [
+      'callbacks' => [
+        'language' => 'locale_language_from_url',
+        'switcher' => 'locale_language_switcher_url',
+        'url_rewrite' => 'locale_language_url_rewrite_url',
+      ],
+      'file' => 'includes/locale.inc',
+    ],
+    'language-default' => [
+      'callbacks' => [
+        'language' => 'language_from_default',
+      ],
+    ],
+  ];
+  variable_del('language_negotiation_language');
+  variable_set('language_negotiation_language', $negotiation);
+
+  // Set custom path to language icons.
+  variable_set('languageicons_path', 'https://storage.easyting.dk/icons/*.png');
+
   // Enable multilanguage support for content types.
   $content_types = node_type_get_types();
   foreach ($content_types as $content_type) {
