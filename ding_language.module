@@ -214,3 +214,24 @@ function ding_language_preprocess_menu_block_wrapper(&$variables) {
     }
   }
 }
+
+/**
+ * Implements hook_panels_pre_render().
+ */
+function ding_language_panels_pre_render($panels_display, $renderer) {
+  $context = $panels_display->context;
+  if (!empty($context['argument_term_1']) && $context['argument_term_1']->plugin == 'entity:taxonomy_term') {
+    if (!empty($context['argument_term_1']->data)) {
+      $term_tid = $context['argument_term_1']->data->tid;
+      $term = i18n_taxonomy_localize_terms(taxonomy_term_load($term_tid));
+      $panels_display->context['argument_term_1']->data = $term;
+      $panels_display->title = $term->name;
+
+      $trail = menu_get_active_trail();
+
+      $trail[1]['title'] = $term->name;
+
+      menu_set_active_trail($trail);
+    }
+  }
+}
