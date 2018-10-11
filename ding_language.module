@@ -235,3 +235,27 @@ function ding_language_panels_pre_render($panels_display, $renderer) {
     }
   }
 }
+
+/**
+ * Implements hook_preprocess().
+ */
+function ding_language_preprocess(&$variables, $hook) {
+  switch ($hook) {
+    case 'views_view_fields':
+      if (!empty($variables['fields']['field_ding_eresource_category'])) {
+        $tid = reset($variables['view']->args);
+        $localized_term = i18n_taxonomy_localize_terms(taxonomy_term_load($tid));
+        $category_field = $variables['fields']['field_ding_eresource_category'];
+
+        $build_string = [
+          '#type' => 'markup',
+          '#markup' => "<{$category_field->element_type}>$localized_term->name</{$category_field->element_type}>"
+        ];
+
+        $category_field->content = drupal_render($build_string);
+
+        $variables['fields']['field_ding_eresource_category'] = $category_field;
+      }
+      break;
+  }
+}
