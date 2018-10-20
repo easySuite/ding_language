@@ -155,6 +155,23 @@ function ding_language_post_features_revert($component) {
     variable_set('language_content_type_' . $content_type->type, 2);
   }
 
+
+  if (!module_exists('i18n_taxonomy')) {
+    module_enable(array('i18n_taxonomy'));
+  }
+
+  // Enable localization for taxonomy vocabularies.
+  $vocabularies = taxonomy_get_vocabularies();
+  foreach ($vocabularies as $vocabulary) {
+    db_update('taxonomy_vocabulary')
+      ->fields(array(
+        'i18n_mode' => 1,
+      ))
+      ->execute();
+
+    i18n_string_object_update('taxonomy_vocabulary', $vocabulary);
+  }
+
   variable_set('ding_language_random', rand());
 }
 
@@ -195,5 +212,50 @@ function ding_language_preprocess_menu_block_wrapper(&$variables) {
         panels_save_display($display);
       }
     }
+  }
+}
+
+/**
+ * Implements hook_panels_pre_render().
+ */
+function ding_language_panels_pre_render($panels_display, $renderer) {
+  $context = $panels_display->context;
+  if (!empty($context['argument_term_1']) && $context['argument_term_1']->plugin == 'entity:taxonomy_term') {
+    if (!empty($context['argument_term_1']->data)) {
+      $term_tid = $context['argument_term_1']->data->tid;
+      $term = i18n_taxonomy_localize_terms(taxonomy_term_load($term_tid));
+      $panels_display->context['argument_term_1']->data = $term;
+      $panels_display->title = $term->name;
+
+      $trail = menu_get_active_trail();
+
+      $trail[1]['title'] = $term->name;
+
+      menu_set_active_trail($trail);
+    }
+  }
+}
+
+/**
+ * Implements hook_preprocess().
+ */
+function ding_language_preprocess(&$variables, $hook) {
+  switch ($hook) {
+    case 'views_view_fields':
+      if (!empty($variables['fields']['field_ding_eresource_category'])) {
+        $tid = reset($variables['view']->args);
+        $localized_term = i18n_taxonomy_localize_terms(taxonomy_term_load($tid));
+        $category_field = $variables['fields']['field_ding_eresource_category'];
+
+        $build_string = [
+          '#type' => 'markup',
+          '#markup' => "<{$category_field->element_type}>$localized_term->name</{$category_field->element_type}>"
+        ];
+
+        $category_field->content = drupal_render($build_string);
+
+        $variables['fields']['field_ding_eresource_category'] = $category_field;
+      }
+      break;
   }
 }
