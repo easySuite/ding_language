@@ -257,5 +257,27 @@ function ding_language_preprocess(&$variables, $hook) {
         $variables['fields']['field_ding_eresource_category'] = $category_field;
       }
       break;
+
+    case 'node':
+      $fields =  ['field_ding_eresource_category', 'field_ding_event_target', 'field_ding_news_category'];
+      foreach ($fields as $field) {
+        if (!empty($variables['content'][$field])) {
+          $tid = $variables[$field][0]['tid'];
+          $localized_term = i18n_taxonomy_localize_terms(taxonomy_term_load($tid));
+
+          $variables['content'][$field]['#items'][0]['taxonomy_term'] = $localized_term;
+          $variables['elements'][$field][0]['#markup'] = $localized_term->name;
+
+          if ($field == 'field_ding_news_category') {
+            $output = $localized_term->name;
+          }
+          else {
+            $output = l($localized_term->name, 'taxonomy/term/' . $tid);
+          }
+
+          $variables['content'][$field][0] = $output;
+        }
+      }
+      break;
   }
 }
