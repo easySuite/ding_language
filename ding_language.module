@@ -279,5 +279,13 @@ function ding_language_preprocess(&$variables, $hook) {
         }
       }
       break;
+
+    case 'entity':
+      if ($variables['entity_type'] == 'profile2') {
+        $tid = $variables['content']['field_ding_staff_department']['#items'][0]['tid'];
+        $translated = i18n_taxonomy_localize_terms(taxonomy_term_load($tid));
+        $variables['content']['field_ding_staff_department'][0]['#title'] = $translated->name;
+      }
+      break;
   }
 }
