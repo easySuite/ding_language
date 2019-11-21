@@ -289,3 +289,19 @@ function ding_language_preprocess(&$variables, $hook) {
       break;
   }
 }
+
+/**
+ * Implements hook_field_attach_view_alter().
+ */
+function ding_language_field_attach_view_alter(&$output, $context) {
+  foreach (element_children($output) as $field_name) {
+    $element = &$output[$field_name];
+    if ($element['#field_type'] == 'taxonomy_term_reference' && $element['#formatter'] == 'taxonomy_term_reference_link') {
+      foreach ($element['#items'] as $delta => $item) {
+        $tid = $item['tid'];
+        $translated_term = i18n_taxonomy_localize_terms(taxonomy_term_load($tid));
+        $element[$delta]['#title'] = $translated_term->name;
+      }
+    }
+  }
+}
