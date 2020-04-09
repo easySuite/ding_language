@@ -305,3 +305,75 @@ function ding_language_field_attach_view_alter(&$output, $context) {
     }
   }
 }
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function ding_language_form_customerror_admin_settings_alter(&$form, &$form_state, $form_id) {
+  $languages = language_list();
+
+  $group_404 = $form['customerror_404_group'];
+
+  $title = $group_404['customerror_404_title'];
+  $body = $group_404['customerror_404'];
+  $default_err_response = variable_get('customerror_404', []);
+
+  $group_404['default'] = [
+    '#type' => 'fieldset',
+    '#title' => t('Default'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  ];
+
+  $group_404['default']['customerror_404_title'] = $title;
+  $group_404['default']['customerror_404'] = $body;
+
+  foreach ($languages as $code => $lang) {
+    $group_404[$lang->language] = [
+      '#type' => 'fieldset',
+      '#title' => $lang->name,
+      '#description' => t('Customerror values for @language language. If empty, values from "Default" group are used.', ['@language' => $lang->name]),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+    ];
+
+    $group_404[$lang->language]['customerror_404_title_' . $code] = $title;
+    $group_404[$lang->language]['customerror_404_title_' . $code]['#title'] = $lang->name . ': ' . $title['#title'];
+    $group_404[$lang->language]['customerror_404_title_' . $code]['#default_value'] = !empty(variable_get('customerror_404_title_' . $code)) ? variable_get('customerror_404_title_' . $code) : variable_get('customerror_404_title');
+
+    $err_response = variable_get('customerror_404_' . $lang->language, []);
+    $group_404[$lang->language]['customerror_404_' . $code] = $body;
+    $group_404[$lang->language]['customerror_404_' . $code]['#title'] = $lang->name . ': ' . $body['#title'];
+    $group_404[$lang->language]['customerror_404_' . $code]['#default_value'] = !empty($err_response['value']) ? $err_response['value'] : $default_err_response['value'];
+  }
+
+  unset($group_404['customerror_404_title']);
+  unset($group_404['customerror_404']);
+
+  $form['customerror_404_group'] = $group_404;
+}
+
+/**
+ * Implements hook_page_build().
+ */
+function ding_language_page_build(&$page) {
+  global $language;
+  $current_path = current_path();
+
+  if ($current_path != 'customerror/404') {
+    return;
+  }
+
+  $path = drupal_get_normal_path(variable_get('site_404', ''));
+
+  if ($path == $current_path) {
+    $default_customerror_title = variable_get('customerror_404_title', '');
+    $page_title = variable_get('customerror_404_title_' . $language->language, $default_customerror_title);
+    drupal_set_title($page_title);
+
+    $default_customerror_body = variable_get('customerror_404', []);
+    $page_content = variable_get('customerror_404_' . $language->language, $default_customerror_body);
+    $return = $page_content['value'];
+    drupal_set_page_content($return);
+  }
+}
