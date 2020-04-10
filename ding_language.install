@@ -55,3 +55,10 @@ function ding_language_install() {
 
   variable_set('ding_language_random', rand());
 }
+
+/**
+ * Set source language as danish.
+ */
+function ding_language_update_7001() {
+  variable_set('i18n_string_source_language', 'da');
+}
