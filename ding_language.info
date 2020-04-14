@@ -20,3 +20,4 @@ features[features_overrides][] = variable.language_negotiation_language_url.valu
 features[features_overrides][] = variable.languageicons_path.value
 features[variable][] = ding_language_random
 features[variable][] = i18n_hide_translation_links
+configure = admin/config/ding/language

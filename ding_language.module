@@ -8,6 +8,25 @@
 include_once 'ding_language.features.inc';
 
 /**
+ * Implements hook_menu().
+ */
+function ding_language_menu() {
+  $items = [];
+
+  $items['admin/config/ding/language'] = [
+    'title' => 'Ding Language',
+    'description' => 'Ding Language settings form.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => ['ding_language_settings_form'],
+    'file' => 'ding_language.admin.inc',
+    'access arguments' => ['access administration pages'],
+    'type' => MENU_NORMAL_ITEM,
+  ];
+
+  return $items;
+}
+
+/**
  * Implements hook_views_query_alter().
  */
 function ding_language_views_query_alter(&$view, &$query) {
@@ -375,5 +394,40 @@ function ding_language_page_build(&$page) {
     $page_content = variable_get('customerror_404_' . $language->language, $default_customerror_body);
     $return = $page_content['value'];
     drupal_set_page_content($return);
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function ding_language_form_i18n_string_locale_translate_edit_form_alter(&$form, &$form_state, $form_id) {
+  $groups = variable_get('ding_language_text_groups', []);
+  $groups = array_filter($groups);
+
+  if (!empty($groups) && in_array($form['textgroup']['#value'], $groups)) {
+    $lid = $form["lid"]["#value"];
+    $source = db_query('SELECT source, context, textgroup, location FROM {locales_source} WHERE lid = :lid', [':lid' => $lid])->fetchObject();
+
+    // Include default form controls with empty values for all languages.
+    // This ensures that the languages are always in the same order in forms.
+    $languages = language_list();
+
+    $form['translations'] = ['#tree' => TRUE];
+    // Approximate the number of rows to use in the default textarea.
+    $rows = min(ceil(str_word_count($source->source) / 12), 10);
+    foreach ($languages as $langcode => $language) {
+      $form['translations'][$langcode] = [
+        '#type' => 'textarea',
+        '#title' => t($language->name),
+        '#rows' => $rows,
+        '#default_value' => '',
+      ];
+    }
+
+    // Fetch translations and fill in default values in the form.
+    $result = db_query("SELECT DISTINCT translation, language FROM {locales_target} WHERE lid = :lid", [':lid' => $lid]);
+    foreach ($result as $translation) {
+      $form['translations'][$translation->language]['#default_value'] = $translation->translation;
+    }
   }
 }
