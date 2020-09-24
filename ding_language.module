@@ -260,6 +260,12 @@ function ding_language_panels_pre_render($panels_display, $renderer) {
  */
 function ding_language_preprocess(&$variables, $hook) {
   switch ($hook) {
+    case strpos($hook, 'ding_nodelist.'):
+      $tid = $variables['item']->category['#items'][0]['tid'];
+      $localized_term = i18n_taxonomy_localize_terms(taxonomy_term_load($tid));
+      $variables['item']->category[0]['#markup'] = $localized_term->name;
+      break;
+
     case 'views_view_fields':
       if (!empty($variables['fields']['field_ding_eresource_category'])) {
         $tid = reset($variables['view']->args);
@@ -278,7 +284,7 @@ function ding_language_preprocess(&$variables, $hook) {
       break;
 
     case 'node':
-      $fields =  ['field_ding_eresource_category', 'field_ding_event_target', 'field_ding_news_category'];
+      $fields =  ['field_ding_eresource_category', 'field_ding_eresource_access', 'field_ding_event_target', 'field_ding_news_category'];
       foreach ($fields as $field) {
         if (!empty($variables['content'][$field])) {
           $tid = $variables[$field][0]['tid'];
