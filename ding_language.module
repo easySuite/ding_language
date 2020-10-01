@@ -61,6 +61,61 @@ function ding_language_views_query_alter(&$view, &$query) {
       ];
     }
   }
+
+  // Show events on library events page, related to library and it's language.
+  if ($view->name == 'ding_event' && $view->current_display == 'ding_event_list_library') {
+    // Get library info.
+    $library_nid = reset($view->args);
+    // Get source id of library translation node.
+    $tnid = db_select('node', 'n')
+      ->fields('n', ['tnid'])
+      ->condition('type', 'ding_library')
+      ->condition('nid', $library_nid)
+      ->execute()
+      ->fetchField();
+
+    // Loading node ids which acts as group id.
+    $gids = db_select('node', 'n')
+      ->fields('n', ['nid'])
+      ->condition('tnid', $tnid)
+      ->execute()
+      ->fetchAllKeyed(0, 0);
+
+    // Alter condition, so query fetches all nodes from group and it's translated
+    // instances.
+    $query->where[0]['conditions'][1]['value'] = $gids;
+    $query->where[0]['conditions'][1]['field'] = 'og_membership_node.gid';
+    $query->where[0]['conditions'][1]['operator'] = 'in';
+  }
+
+  // Events filter by library on events page.
+  if ($view->name == 'ding_event' && $view->current_display == 'ding_event_list') {
+    if (isset($view->exposed_input['og_group_ref_target_id_entityreference_filter'])) {
+      foreach ($view->exposed_input['og_group_ref_target_id_entityreference_filter'] as $checked_library) {
+        $tnid = $tnid = db_select('node', 'n')
+          ->fields('n', ['tnid'])
+          ->condition('type', 'ding_library')
+          ->condition('nid', $checked_library)
+          ->execute()
+          ->fetchField();
+
+        $gids = db_select('node', 'n')
+          ->fields('n', ['nid'])
+          ->condition('tnid', $tnid)
+          ->execute()
+          ->fetchAllKeyed(0, 0);
+
+        $query_conditions = $query->where;
+        foreach ($query_conditions as $key => $conditions_group) {
+          foreach ($conditions_group['conditions'] as $pos => $condition) {
+            if ($condition['field'] == 'og_membership.gid') {
+              $query->where[$key]['conditions'][$pos]['value'][] = $gids;
+            }
+          }
+        }
+      }
+    }
+  }
 }
 
 /**
