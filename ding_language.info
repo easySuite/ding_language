@@ -8,6 +8,7 @@ dependencies[] = ding_frontend
 dependencies[] = strongarm
 dependencies[] = i18n_taxonomy
 dependencies[] = i18n_variable
+dependencies[] = i18n_contact
 features[ctools][] = strongarm:strongarm:1
 features[features_api][] = api:2
 features[features_override_items][] = variable.language_negotiation_language
