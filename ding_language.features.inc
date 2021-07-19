@@ -17,6 +17,9 @@ function ding_language_ctools_plugin_api($module = NULL, $api = NULL) {
  * Implements hook_strongarm_alter().
  */
 function ding_language_strongarm_alter(&$data) {
+  if (isset($data['i18n_string_allowed_formats'])) {
+    $data['i18n_string_allowed_formats']->value['ding_wysiwyg'] = 'ding_wysiwyg'; /* WAS: 0 */
+  }
   if (isset($data['language_negotiation_language'])) {
     $data['language_negotiation_language']->value['locale-url'] = array(
       'callbacks' => array(
