@@ -12,6 +12,7 @@ function ding_language_features_override_default_overrides() {
   $overrides = array();
 
   // Exported overrides for: variable
+  $overrides["variable.i18n_string_allowed_formats.value|ding_wysiwyg"] = 'ding_wysiwyg';
   $overrides["variable.language_negotiation_language.value|locale-session"]["DELETED"] = TRUE;
   $overrides["variable.language_negotiation_language.value|locale-url"] = array(
     'callbacks' => array(
