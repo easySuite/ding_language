@@ -53,5 +53,22 @@ function ding_language_install() {
     i18n_string_object_update('taxonomy_vocabulary', $vocabulary);
   }
 
+  $string_formats = [
+    'ding_wysiwyg' => 'ding_wysiwyg',
+    'plain_text' => 'plain_text',
+  ];
+  variable_set('i18n_string_allowed_formats', $string_formats);
+
   variable_set('ding_language_random', rand());
+}
+
+/**
+ * Allow translation of WYSIWYG enabled fields.
+ */
+function ding_language_update_7001(&$sandbox) {
+  $string_formats = [
+    'ding_wysiwyg' => 'ding_wysiwyg',
+    'plain_text' => 'plain_text',
+  ];
+  variable_set('i18n_string_allowed_formats', $string_formats);
 }
