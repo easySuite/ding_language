@@ -1,5 +1,10 @@
 ## Change Log
 
+### 7.x-6.4.0 (15/11-2021)
+- [#18](https://github.com/easySuite/ding_language/pull/18) EASYOPAC-1294 - Remove overriding of EUCC module 'Agree' button label. (@bozeak)
+- [#17](https://github.com/easySuite/ding_language/pull/17) EASYOPAC-1342 - Display localized block header for footer address block. (@bozeak)
+- [#15](https://github.com/easySuite/ding_language/pull/15) EASYOPAC-1342 - Allow translation of WYSIWYG formatted content. (@bozeak)
+
 ### 7.x-6.2.1 (10/06-2021)
 - [#14](https://github.com/easySuite/ding_language/pull/14) EASYOAPC-1294 - Translate agree button label for non-core languages. (@bozeak)
 
