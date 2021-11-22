@@ -72,3 +72,10 @@ function ding_language_update_7001(&$sandbox) {
   ];
   variable_set('i18n_string_allowed_formats', $string_formats);
 }
+
+/**
+ * Enable Block Internationalization module.
+ */
+function ding_language_update_7002() {
+  module_enable(['i18n_block']);
+}
