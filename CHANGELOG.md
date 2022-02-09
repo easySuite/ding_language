@@ -1,5 +1,9 @@
 ## Change Log
 
+### 7.x-6.4.1 (09/02-2022)
+- [#20](https://github.com/easySuite/ding_language/pull/20) EASYOPAC-1384 - Force i18n_block module enable. (@bozeak)
+- [#19](https://github.com/easySuite/ding_language/pull/19) EASYOPAC-1384 - Adding block translation module as dependency. (@bozeak)
+
 ### 7.x-6.4.0 (15/11-2021)
 - [#18](https://github.com/easySuite/ding_language/pull/18) EASYOPAC-1294 - Remove overriding of EUCC module 'Agree' button label. (@bozeak)
 - [#17](https://github.com/easySuite/ding_language/pull/17) EASYOPAC-1342 - Display localized block header for footer address block. (@bozeak)
