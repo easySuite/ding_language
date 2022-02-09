@@ -1,7 +1,7 @@
 name = Ding Language
 description = Enables multilanguage support for Ding2
 core = 7.x
-version = 7.x-6.4.0
+version = 7.x-6.4.1
 package = easyOPAC
 dependencies[] = ctools
 dependencies[] = ding_frontend
