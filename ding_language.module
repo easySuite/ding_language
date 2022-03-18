@@ -532,3 +532,49 @@ function ding_language_preprocess_panels_pane(&$variables) {
     $variables['title'] = $strings['blocks:block:1:title']->translations[$langcode] ?? $block->title;
   }
 }
+
+/**
+ * Implements hook_ting_covers().
+ */
+function ding_language_ting_covers($entities) {
+  $covers = [];
+  $fausts = [];
+  foreach ($entities as $entity) {
+    $fausts[$entity->provider_id] = $entity->ding_entity_id;
+  }
+  try {
+    $service = new AdditionalInformationService(variable_get('ting_covers_addi_wsdl_url'), variable_get('ting_covers_addi_username'), variable_get('ting_covers_addi_group'), variable_get('ting_covers_addi_password'), variable_get('ting_covers_addi_enforce_url', FALSE));
+
+    // Retrieve covers by Faust.
+    $retrieved = $service->getByFaustNumber(array_keys($fausts));
+
+    foreach ($retrieved as $pid => $cover) {
+      // Try to extract the image url from the result.
+      $source_url = FALSE;
+      if ($cover->detailUrl) {
+        $source_url = $cover->detailUrl;
+      }
+      elseif ($cover->thumbnailUrl) {
+        $source_url = $cover->thumbnailUrl;
+      }
+
+      // If we still haven't found a cover check if we can use external URL.
+      if (!$source_url && isset($cover->externUrl)) {
+        $source_url = $cover->externUrl;
+      }
+
+      if ($source_url) {
+        // Return the path to the cover.
+        $covers[$fausts[$pid]] = $source_url;
+      }
+    }
+  }
+  catch (Exception $exception) {
+    watchdog('ding_language', 'Unable to retrieve covers from ADDI: %message', ['%message' => $exception->getMessage()], WATCHDOG_ERROR);
+
+    // Error in fetching, return no covers.
+    return [];
+  }
+
+  return $covers;
+}
